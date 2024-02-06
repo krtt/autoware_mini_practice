@@ -1,0 +1,11 @@
+<package format="2">
+  <name>common</name>
+  <version>1.0.0</version>
+  <description>Common data for Autoware Mini practices</description>
+  <license>MIT</license>
+  <author email="edgar.sepp@ut.ee">Edgar Sepp</author>
+  <maintainer email="adl@ut.ee">Autonomous Driving Lab</maintainer>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
