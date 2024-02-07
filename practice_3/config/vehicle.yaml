@@ -1,0 +1,7 @@
+wheel_base: 2.789
+steer_ratio: 16.135
+acceleration_limit: 1.0
+deceleration_limit: 1.0
+
+bicycle_simulation:
+  publish_rate: 50

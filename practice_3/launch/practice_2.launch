@@ -1,0 +1,26 @@
+<launch>
+    
+    <!-- Arguments, can be passed in using command line -->
+    <arg name="bag_file"        default="ride_14_minimal.bag" doc="bag file to play" />
+    <arg name="interval"        default="1.0"                 doc="Distance between recorded waypoints" />
+    <arg name="waypoints_file"  default="waypoints_1m.csv"    doc="waypoints file name" />
+
+    <!-- Nodes -->
+    <!-- Play rosbag -->
+    <node pkg="rosbag" type="play" name="player" required="true" args="$(find common)/data/bags/$(arg bag_file) --clock" />
+
+    <!-- Localizer -->
+    <node pkg="practice_3" type="localizer.py" name="localizer" output="screen" required="true" ns="localization"/>
+
+    <!-- Waypoint saver -->
+    <node pkg="practice_3" type="waypoint_saver.py" name="waypoint_saver" output="screen" >
+        <param name="interval"          value="$(arg interval)" />
+        <param name="waypoints_file"    value="$(find common)/data/trajectories/$(arg waypoints_file)" />
+    </node>
+
+    <!-- Rviz -->
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find practice_3)/rviz/practice_2.rviz" required="true" />
+
+    <!-- Config -->
+    <rosparam command="load" file="$(find practice_3)/config/localization.yaml" />
+</launch>
