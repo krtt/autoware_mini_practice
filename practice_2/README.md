@@ -2,9 +2,9 @@
 
 # Practice 2 - Localizer
 
-Localizer determines vehicle position and speed. The position is the result of measurements done by the [GNSS - Global Navigation Satellite System]((https://en.wikipedia.org/wiki/Satellite_navigation)) system. Speed can be determined from consecutive locations (shift in location and difference in the time). ADL car uses quite a sophisticated Novatel SPAN system ([Novatel PwrPak7D](https://novatel.com/products/receivers/enclosures/pwrpak7d)) that fuses GNSS positioning and IMU measurements to improve the location estimate.
+Localizer determines vehicle position and speed. The position is the result of measurements done by the [GNSS - Global Navigation Satellite System]((https://en.wikipedia.org/wiki/Satellite_navigation)). Speed can be determined from consecutive locations (shift in location and difference in the time). More sophisticated systems (like Novatel SPAN system, for example [Novatel PwrPak7D](https://novatel.com/products/receivers/enclosures/pwrpak7d)) include also IMU measurements to improve the accuracy of GNSS positioning.
 
-In this practice, we will use logged data from the car saved in the rosbag. The filtered rosbag is provided in the `common` package. The GNSS log is recorded in the `/novatel/oem7/inspva` topic:
+In this practice, we will use logged data from the car saved in the rosbag and provided in the `common` package. The GNSS log is recorded in the `/novatel/oem7/inspva` topic:
 * location is given as latitude and longitude (geographic coordinates in WGS84 system, with [epsg code 4326](https://epsg.io/4326))
 * velocity has three components (east, north and up).
 
@@ -14,7 +14,7 @@ The localizer node must take the latitude and longitude and convert them to UTM 
 
 ##### in `practice_2`
 * `/nodes/planning/waypoint_saver.py` - node for waypoint saving
-* `/launch/practice_2.launch` - a launch file that should run at the end of practice using your localizer node and also launch waypoint recording
+* `/launch/practice_2.launch` - a launch file that should run without errors at the end of the practice using your localizer node and also launch waypoint recording
 * `/rviz/practice_2.rviz` - rviz config file for visualizing the topics
 * `/config/localization.yaml` - some parameter values for localizer
 
@@ -32,18 +32,17 @@ The localizer node must take the latitude and longitude and convert them to UTM 
 
 ## 1. Create localizer node
 
-We will create a [subscriber node](https://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29#rospy_tutorials.2FTutorials.2FWritingPublisherSubscriber.Writing_the_Subscriber_Node). The node will get access to the data when we will [play a rosbag](https://wiki.ros.org/rosbag/Commandline#rosbag_play). Rosbag is a recorded dataset, and when playing the rosbag, all the recorded topics are published; that is how our subscriber will access necessary GNSS data.
+We will create a [subscriber node](https://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29#rospy_tutorials.2FTutorials.2FWritingPublisherSubscriber.Writing_the_Subscriber_Node). The node will get access to the data when we will [play a rosbag](https://wiki.ros.org/rosbag/Commandline#rosbag_play). Rosbag is a recorded dataset, and when playing the rosbag, all the recorded topics are published according to the recorded timestamps; that is how our subscriber will get access to necessary GNSS data.
 
 ##### Instructions
 1. Create a new file called `localizer.py` inside `~/autoware_mini_practice/src/practice_2/nodes/localization`
 2. Copy the following code as a starting point to your node. What to note:
    - See how the node is organized as a class - it is a good practice to agree on some common style when writing a code. Let this be an example of current good practice
-      - ROS node is created in `if __name__ == '__main__':` block and then class method `run()` is called
-      - Can read here why [`if __name__ == '__main__':`](https://docs.python.org/3/library/__main__.html#idiomatic-usage) block is used
-      - in class init method organize the things logically
-      - code should be inside callbacks and functions
-   - All the necessary imports should be done, including different message types
-   - All required subscribers and publishers are also created
+      - ROS node is created in [`if __name__ == '__main__':`](https://docs.python.org/3/library/__main__.html#idiomatic-usage) block and then class method `run()` is called
+      - organize the code in meaningful groups in class init method 
+      - other code should be inside callbacks and functions
+   - Go through the necessary imports and note different message types
+   - See how subscribers and publishers are created
 3. There is an empty callback: `transform_coordinates` - replace `pass` with printing the coordinates `print(msg.latitude, msg.longitude)`
 
 ```
@@ -91,6 +90,7 @@ if __name__ == '__main__':
 ```
 
 ##### Validation
+* As a reminder lets run first all the nodes manually
 * In terminal 1: `roscore`
 * In terminal 2: `rosbag play --clock ride_14_minimal.bag` - need to be in the same folder where the rosbag is or enter it with the relative path. Bag files are under `common` package `/data/bags`.
 * In terminal 3: run the localizer node (`python localizer.py`) and see if the coordinates printed out are roughly similar to the following:
@@ -125,7 +125,7 @@ For coordinate transformations, we use the [pyproj](https://pyproj4.github.io/py
 self.transformer = Transformer.from_crs(self.crs_wgs84, self.crs_utm)
 self.origin_x, self.origin_y = self.transformer.transform(utm_origin_lat, utm_origin_lon)
 ```
-4. `self.transformer` can now be used inside the callback to transform the coordinates from INSPVA message
+4. `self.transformer` can be used also inside the callback to transform the coordinates from INSPVA message
 5. Add also subtracting the transformed origin coordinates and replace the previous printout in the callback with the current results
 
 
@@ -151,7 +151,7 @@ As a next step, we must publish transformed coordinates to a `current_pose` topi
       * `position` (message type [geometry_msgs/Point](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Point.html))
       * `orientation` (message type [geometry_msgs/Quaternion](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Quaternion.html))
 
-Let's look separately how we get the `position` and `orientation`
+Let's look separately how we can get the `position` and `orientation`.
 
 ##### `position`
 * `position` is a [Point](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Point.html) message
@@ -159,12 +159,12 @@ Let's look separately how we get the `position` and `orientation`
    - for `position.z` we need to take `msg.height` and subtract undulation (parameter)
 
 ##### `orientation`
-* `orientation` is [Quaternion](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Quaternion.html) message and [quaternion](https://en.wikipedia.org/wiki/Quaternion) is another way to represent angles with respect to coordinate axis aka orientation.
+* `orientation` is [Quaternion](https://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Quaternion.html) message and [quaternion](https://en.wikipedia.org/wiki/Quaternion) is a way to represent angles with respect to coordinate axis aka orientation.
 * From INSPVA we have azimuth - angle from North in clockwise direction
 * We will be ignoring the car's roll and pitch angles currently
 * Essentially, we need to convert the azimuth angle to Quaternion, and then we can assign it as `orientation` in the PoseStamped message. There are a couple of things we need to do to achive that:
    - INSPVA azimuth is in the wgs84 system (ellipsoidal system and the North direction is always along the meridian pointing to the North); we need to correct it for the UTM zone 35N coordinate system (cartesian coordinates on the planar surface where the North direction is taken from the central meridian).
-   - The correction depends on location and is also known as meridian convergence. This can be found using the following code line with [get_factors](https://pyproj4.github.io/pyproj/stable/api/proj.html#pyproj.Proj.get_factors) method:
+   - The correction depends on location and is also known as meridian convergence. This can be found using the following code line with [get_factors](https://pyproj4.github.io/pyproj/stable/api/proj.html#pyproj.Proj.get_factors) method (see the example code line below)
    - Next thing is we need to convert angle from azimuth (**clockwise (CW)** angle from North - **y axis**) to **counterclocḱwise (CCW)** angle from **x-axis** (this is how angles are usually represented in ROS). Let's call this angle **yaw**. For that, the function convert_azimuth_to_yaw() is provided in the code section
    - And finally, we can convert the angle to Quaternion; you can use the `quaternion_from_euler` for that
 
@@ -197,7 +197,7 @@ orientation = Quaternion(x, y, z, w)
 1. Create the PoseStamped() message
 2. Use previously provided code to calculate x, y, z values and orientation
 3. `stamp` should be taken from the INSPVA message header
-4. `frame_id` should be `map`
+4. `frame_id` should be `"map"`
 5. Publish `current_pose`
 
 ```
@@ -246,7 +246,7 @@ Message type in `current_velocity` is [TwistStamped](https://docs.ros.org/en/mel
 1. Calculate the velocity as norm of the `north_velocity` and `east_velocity`
 2. Create TwistStamped message
 3. Create the message 
-   * Set frame as `base_link` 
+   * Set frame as `"base_link"` 
    * take a time stamp from INSPVA message
    * assign velocity to `msg.twist.linear.x`
 4. Publish to `current_velocity`
@@ -278,7 +278,7 @@ self.br.sendTransform(t)
 
 ##### Validation 
 * `roslaunch practice_2 practice_2.launch`
-* Rviz should open with a visualization of recorded waypoints.
+* Rviz should open with a similar visualization. Location information is played from the rosbag, your localization node transfrms them into UTM Zone 35N coordinates, and also waypoint recording is launched.
 
 ![saved_waypoints_img](doc/saved_waypoints.png)
 
