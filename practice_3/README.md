@@ -266,7 +266,7 @@ Image from: https://www.shuffleai.blog/blog/Three_Methods_of_Vehicle_Lateral_Con
 self.lookahead_distance = rospy.get_param("~lookahead_distance")
 self.wheel_base = rospy.get_param("/wheel_base")
 
-# using euler?from?quaternion to get the heading angle
+# using euler_from_quaternion to get the heading angle
 from tf.transformations import euler_from_quaternion
 _, _, heading = euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
 
