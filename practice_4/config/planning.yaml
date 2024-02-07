@@ -1,0 +1,8 @@
+waypoint_loader:
+  output_frame: map
+  wp_left_width: 1.4
+  wp_right_width: 1.4
+
+lanelet2_global_planner:
+  output_frame: map
+  distance_to_goal_limit: 5.0
