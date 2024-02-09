@@ -1,0 +1,16 @@
+<launch>
+    <node pkg="practice_1" name="publisher1" type="publisher.py" output="screen" required="true">
+         <param name="message" value="Hello publisher1" />
+         <param name="hz" value="1" />
+    </node>    
+    
+    <node pkg="practice_1" name="publisher2" type="publisher.py" output="screen" required="true">
+         <param name="message" value="Hello publisher2" />
+         <param name="hz" value="2" />
+    </node> 
+   
+    <node pkg="practice_1" name="subscriber" type="subscriber.py" output="screen" required="true"/>        
+</launch>
+
+
+
